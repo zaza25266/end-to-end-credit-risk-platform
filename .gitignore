@@ -1,0 +1,58 @@
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Python Packaging
+build/
+dist/
+*.egg-info/
+
+# Environment
+.env
+.env.*
+
+# Secrets
+*.pem
+*.key
+
+# Models
+models/*.pkl
+models/*.joblib
+
+# Reports
+reports/figures/*.png
+reports/figures/*.jpg
+
+# Kaggle
+kaggle.json
+
+# DVC Cache
+.dvc/cache/
