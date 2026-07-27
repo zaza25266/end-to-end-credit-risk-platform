@@ -1,0 +1,5 @@
+outs:
+- md5: 86c6caee3d8ea18a11b09d4924ae5cb6
+  size: 9166070
+  hash: md5
+  path: invalid_values_v2.csv
