@@ -1,5 +1,0 @@
-outs:
-- md5: e6cd34d87e48c908062259e5dbd4879e
-  size: 25032747
-  hash: md5
-  path: scaled_logistic_v1.csv
