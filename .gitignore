@@ -58,3 +58,4 @@ mlflow.db
 mlflow/
 *.pkl
 *.joblib
+/data
