@@ -1,46 +1,52 @@
+import numpy as np
 from catboost import CatBoostClassifier
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import VotingClassifier
 from src.utils.config import load_params
 
-def get_candidate_models():
-    """
-    Initializes CatBoost, XGBoost, LightGBM, and the Soft Voting Ensemble
-    using hyperparameter configurations loaded directly from params.yaml.
-    """
+def get_candidate_models(y_train=None):
     params = load_params()
-    models_cfg = params["models"]
-    ensemble_cfg = params["ensemble"]
-
-    # 1. CatBoost Classifier
-    cb_params = models_cfg["catboost"]["params"]
-    cb_fixed = models_cfg["catboost"]["fixed_params"]
-    catboost_model = CatBoostClassifier(**cb_params, **cb_fixed)
-
-    # 2. XGBoost Classifier
-    xgb_params = models_cfg["xgboost"]["params"]
-    xgb_fixed = models_cfg["xgboost"]["fixed_params"]
-    xgboost_model = XGBClassifier(**xgb_params, **xgb_fixed)
-
-    # 3. LightGBM Classifier
-    lgb_params = models_cfg["lightgbm"]["params"]
-    lgb_fixed = models_cfg["lightgbm"]["fixed_params"]
-    lightgbm_model = LGBMClassifier(**lgb_params, **lgb_fixed)
-
-    # 4. Soft Voting Ensemble (CatBoost + LightGBM as specified in params.yaml)
-    weights = [
-        ensemble_cfg["weights"]["catboost"],
-        ensemble_cfg["weights"]["lightgbm"]
-    ]
+    model_params = params["models"]
     
+    # Calculate scale_pos_weight for imbalanced classification if y_train is provided
+    scale_pos_weight = 1.0
+    if y_train is not None:
+        neg_count = np.sum(y_train == 0)
+        pos_count = np.sum(y_train == 1)
+        if pos_count > 0:
+            scale_pos_weight = float(neg_count / pos_count)
+
+    catboost_model = CatBoostClassifier(
+        iterations=model_params["catboost"]["iterations"],
+        depth=model_params["catboost"]["depth"],
+        learning_rate=model_params["catboost"]["learning_rate"],
+        auto_class_weights="Balanced",
+        verbose=0
+    )
+
+    xgboost_model = XGBClassifier(
+        n_estimators=model_params["xgboost"]["n_estimators"],
+        max_depth=model_params["xgboost"]["max_depth"],
+        learning_rate=model_params["xgboost"]["learning_rate"],
+        scale_pos_weight=scale_pos_weight,
+        eval_metric="logloss"
+    )
+
+    lightgbm_model = LGBMClassifier(
+        n_estimators=model_params["lightgbm"]["n_estimators"],
+        max_depth=model_params["lightgbm"]["max_depth"],
+        learning_rate=model_params["lightgbm"]["learning_rate"],
+        class_weight="balanced",
+        verbose=-1
+    )
+
     ensemble_model = VotingClassifier(
         estimators=[
-            ("catboost", catboost_model),
-            ("lightgbm", lightgbm_model)
+            ('catboost', catboost_model),
+            ('xgboost', xgboost_model)
         ],
-        voting=ensemble_cfg["voting"],
-        weights=weights
+        voting='soft'
     )
 
     return {
