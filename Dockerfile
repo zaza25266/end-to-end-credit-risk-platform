@@ -14,8 +14,8 @@ RUN pip install --no-cache-dir --default-timeout=1000 -r requirements.txt
 
 # Copy application source code, models, and config
 COPY src/ ./src/
-COPY models/ ./models/
 COPY config/ ./config/
+COPY models* ./models/
 
 # Expose port for Render / local testing
 EXPOSE 8000
