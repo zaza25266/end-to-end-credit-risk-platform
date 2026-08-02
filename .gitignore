@@ -59,3 +59,7 @@ mlflow/
 *.pkl
 *.joblib
 /data
+
+
+
+*.ipynb linguist-detectable=false
