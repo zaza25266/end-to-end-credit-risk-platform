@@ -1,5 +1,5 @@
 fastapi
-uvicorn[standard]
+uvicorn
 pydantic
 pandas
 numpy
@@ -7,8 +7,14 @@ scikit-learn
 catboost
 xgboost
 lightgbm
+pandera
+mlflow
 sqlalchemy
 psycopg2-binary
 slowapi
+shap
+evidently
 pyyaml
 joblib
+pytest
+requests
