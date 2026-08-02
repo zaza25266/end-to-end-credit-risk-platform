@@ -57,7 +57,17 @@ def train_and_evaluate():
             mlflow.log_metric("pr_auc", pr_auc)
             mlflow.log_metric("decision_threshold", threshold)
             
-            mlflow.sklearn.log_model(model, artifact_path=f"{name}_model")
+            # Log model with trusted types allowed for skops validation
+            mlflow.sklearn.log_model(
+                model, 
+                artifact_path=f"{name}_model",
+                skops_trusted_types=[
+                    "catboost.core.CatBoostClassifier",
+                    "xgboost.sklearn.XGBClassifier",
+                    "lightgbm.basic.Booster",
+                    "lightgbm.sklearn.LGBMClassifier"
+                ]
+            )
             
             # If this is our champion ensemble, save it locally as champion_model.pkl for FastAPI
             if name == "ensemble":
