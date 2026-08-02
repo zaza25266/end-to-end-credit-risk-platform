@@ -35,8 +35,6 @@ data/processed/*
 mlflow.db
 mlflow/
 mlflow/mlflow.db
-*.pkl
-*.joblib
 
 # Environment variables & IDEs
 .env
