@@ -1,17 +1,35 @@
 import os
 import logging
-from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from pathlib import Path
+from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime
+from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/credit_risk_db")
+# ---------------------------------------------------------------------------
+# Database URL resolution with SQLite fallback
+# ---------------------------------------------------------------------------
+# Priority order:
+#   1. DATABASE_URL env var (set by docker-compose for production)
+#   2. SQLite file in the project root (automatic local development fallback)
+#
+# This means the app starts cleanly without Docker / PostgreSQL running locally.
+# The SQLite file is gitignored and carries no production data.
+# ---------------------------------------------------------------------------
+_DEFAULT_SQLITE = (
+    "sqlite:///"
+    + str(Path(__file__).resolve().parents[3] / "telemetry.db")
+)
+DATABASE_URL = os.getenv("DATABASE_URL", _DEFAULT_SQLITE)
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+# SQLite needs connect_args={"check_same_thread": False} for use with FastAPI
+_connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=_connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
 
 class PredictionTelemetry(Base):
     """
@@ -29,10 +47,12 @@ class PredictionTelemetry(Base):
     default_probability = Column(Float)
     prediction_decision = Column(String(50))
 
+
 def init_db():
     """Creates telemetry database tables if they do not exist."""
     try:
         Base.metadata.create_all(bind=engine)
-        logger.info("PostgreSQL telemetry database schema initialized successfully.")
+        db_label = "SQLite (local)" if DATABASE_URL.startswith("sqlite") else "PostgreSQL"
+        logger.info(f"Telemetry database schema initialised successfully ({db_label}).")
     except Exception as e:
-        logger.warning(f"Database initialization skipped or deferred: {e}")
+        logger.warning(f"Database initialisation skipped or deferred: {e}")

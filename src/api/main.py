@@ -1,5 +1,6 @@
 import pandas as pd
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -9,75 +10,87 @@ from src.api.database import init_db, SessionLocal, PredictionTelemetry
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(
-    title="End-to-End Credit Risk API",
-    description="Production-grade asynchronous scoring engine with model governance & telemetry.",
+    title="Credit Risk API",
+    description="Scoring engine with telemetry and rate limiting.",
     version="1.0.0"
+)
+
+# Browsers send an OPTIONS preflight before every cross-origin POST.
+# Without this middleware FastAPI returns 405 and the actual request never goes through.
+# Swap allow_origins=["*"] for your real domain before going to production.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Accept"],
 )
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+
 @app.on_event("startup")
 def startup_event():
     init_db()
+
 
 @app.get("/health", tags=["Lifecycle"])
 @limiter.limit("10/minute")
 def health_check(request: Request):
     artifacts = get_production_artifacts()
-    status = "healthy" if artifacts["model"] is not None else "degraded_missing_model"
     return {
-        "status": status,
+        "status": "healthy" if artifacts["model"] is not None else "degraded_missing_model",
         "threshold": artifacts["threshold"],
-        "model_loaded": artifacts["model"] is not None
+        "model_loaded": artifacts["model"] is not None,
     }
+
 
 @app.post("/predict", response_model=PredictionResponse, tags=["Inference"])
 @limiter.limit("30/minute")
 def predict_credit_risk(payload: LoanApplicationRequest, request: Request):
     artifacts = get_production_artifacts()
-    model = artifacts["model"]
+    model       = artifacts["model"]
     transformer = artifacts["transformer"]
-    threshold = artifacts["threshold"]
+    threshold   = artifacts["threshold"]
 
     if model is None or transformer is None:
         raise HTTPException(
             status_code=503,
-            detail="Production model or transformer artifacts not found in memory. Please run training pipeline first."
+            detail="Model artifacts not found. Run the training pipeline first.",
         )
 
-    # Convert request to DataFrame for transformer pipeline consumption
-    input_data = pd.DataFrame([payload.dict(by_alias=True)])
-    
+    # by_alias=True is required — the transformer expects hyphenated column names
+    # like "NumberOfTime30-59DaysPastDueNotWorse", not the underscore Python attr.
+    input_data = pd.DataFrame([payload.model_dump(by_alias=True)])
+
     try:
-        transformed_data = transformer.transform(input_data)
-        probability = float(model.predict_proba(transformed_data)[:, 1][0])
+        transformed = transformer.transform(input_data)
+        probability = float(model.predict_proba(transformed)[:, 1][0])
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Inference execution error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Inference error: {e}")
 
-    is_default = probability >= threshold
-    decision = "Flagged for Default Risk" if is_default else "Approved"
+    decision = "Flagged for Default Risk" if probability >= threshold else "Approved"
 
-    # Log telemetry asynchronously/synchronously to database session
+    # Best-effort telemetry — a DB failure here must never kill a prediction.
     try:
         db = SessionLocal()
-        telemetry_record = PredictionTelemetry(
+        db.add(PredictionTelemetry(
             revolving_utilization=payload.RevolvingUtilizationOfUnsecuredLines,
             age=payload.age,
             debt_ratio=payload.DebtRatio,
             monthly_income=payload.MonthlyIncome,
             default_probability=probability,
-            prediction_decision=decision
-        )
-        db.add(telemetry_record)
+            prediction_decision=decision,
+        ))
         db.commit()
         db.close()
     except Exception:
-        pass # Non-blocking failure for telemetry logging
+        pass
 
     return PredictionResponse(
         default_probability=round(probability, 4),
         decision_threshold=threshold,
         prediction=decision,
-        risk_score_percentage=round(probability * 100, 2)
+        risk_score_percentage=round(probability * 100, 2),
     )

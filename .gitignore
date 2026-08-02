@@ -60,3 +60,6 @@ mlflow/
 *.joblib
 /data
 
+# Local SQLite telemetry fallback (dev only — never commit)
+telemetry.db
+

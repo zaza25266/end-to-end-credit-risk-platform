@@ -1,32 +1,50 @@
-from pydantic import BaseModel, Field, conint, confloat
+from pydantic import BaseModel, Field, conint, confloat, ConfigDict
+
 
 class LoanApplicationRequest(BaseModel):
     """
-    Validation schema for incoming loan applicant payloads.
-    Enforces logical boundaries matching the credit risk feature set.
+    Input payload for a single loan applicant.
+    
     """
-    RevolvingUtilizationOfUnsecuredLines: confloat(ge=0.0) = Field(
-        ..., description="Total balance on credit cards divided by the sum of credit limits"
-    )
-    age: conint(ge=18, le=120) = Field(..., description="Age of borrower in years")
-    NumberOfTime30_59DaysPastDueNotWorse: conint(ge=0) = Field(
-        ..., alias="NumberOfTime30-59DaysPastDueNotWorse", description="Number of times past due 30-59 days"
-    )
-    DebtRatio: confloat(ge=0.0) = Field(..., description="Monthly debt payments, alimony, and living costs divided by monthly gross income")
-    MonthlyIncome: confloat(ge=0.0) = Field(..., description="Monthly income")
-    NumberOfOpenCreditLinesAndLoans: conint(ge=0) = Field(..., description="Number of open loans and credit lines")
-    NumberRealEstateLoansOrLines: conint(ge=0) = Field(..., description="Number of mortgage and real estate loans")
-    NumberOfTimes90DaysLate: conint(ge=0) = Field(..., description="Number of times 90 days late or more")
-    NumberDependingPersons: confloat(ge=0.0) = Field(None, description="Number of dependents in family excluding themselves")
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
+
+    RevolvingUtilizationOfUnsecuredLines: confloat(ge=0.0) = Field(
+        ..., description="Credit card balance divided by total limit"
+    )
+    age: conint(ge=18, le=120) = Field(
+        ..., description="Applicant age in years"
+    )
+    NumberOfTime30_59DaysPastDueNotWorse: conint(ge=0) = Field(
+        ..., alias="NumberOfTime30-59DaysPastDueNotWorse",
+        description="Times 30-59 days past due"
+    )
+    DebtRatio: confloat(ge=0.0) = Field(
+        ..., description="Monthly debt payments / gross income"
+    )
+    MonthlyIncome: confloat(ge=0.0) = Field(
+        ..., description="Monthly gross income in USD"
+    )
+    NumberOfOpenCreditLinesAndLoans: conint(ge=0) = Field(
+        ..., description="Open loans and lines of credit"
+    )
+    NumberOfTimes90DaysLate: conint(ge=0) = Field(
+        ..., description="Times 90+ days past due"
+    )
+    NumberRealEstateLoansOrLines: conint(ge=0) = Field(
+        ..., description="Mortgage and equity lines"
+    )
+    NumberOfTime60_89DaysPastDueNotWorse: conint(ge=0) = Field(
+        ..., alias="NumberOfTime60-89DaysPastDueNotWorse",
+        description="Times 60-89 days past due"
+    )
+    NumberOfDependents: conint(ge=0) = Field(
+        0, description="Dependents excluding the borrower"
+    )
+
 
 class PredictionResponse(BaseModel):
-    """
-    Structured response payload returned to the frontend or loan officer.
-    """
-    default_probability: float
+    default_probability: float    # raw model output, 0.0–1.0
     decision_threshold: float
-    prediction: str = Field(..., description="'Approved' or 'Flagged for Default Risk'")
-    risk_score_percentage: float
+    prediction: str               # "Approved" or "Flagged for Default Risk"
+    risk_score_percentage: float  # default_probability * 100
