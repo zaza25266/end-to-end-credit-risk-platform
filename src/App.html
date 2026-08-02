@@ -382,17 +382,25 @@
         .notice-error.visible { display: block; }
 
         /* ── Info notice ────────────────────────────────────────────── */
+        @keyframes blink-alert {
+            0% { opacity: 1; background-color: #ff2a2a; }
+            50% { opacity: 0.8; background-color: #cc0000; }
+            100% { opacity: 1; background-color: #ff2a2a; }
+        }
         .notice-info {
             display: none;
             margin-top: 1.25rem;
             padding: .8rem 1rem;
-            background: #fdfaf2;
-            border: 1px solid #ede9e1;
-            border-left: 3px solid var(--gold);
-            font-size: .82rem;
-            color: var(--ink);
+            background: #ff2a2a;
+            border: 2px solid #b30000;
+            border-radius: var(--radius);
+            font-size: .85rem;
+            color: #ffffff;
+            font-weight: 500;
+            animation: blink-alert 1.2s infinite;
+            text-align: center;
         }
-        .notice-info strong { font-weight: 600; color: var(--gold); }
+        .notice-info strong { font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: .05em; }
         .notice-info.visible { display: block; }
 
         /* ── Decision panel ──────────────────────────────────────────── */
