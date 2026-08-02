@@ -18,25 +18,25 @@ def get_candidate_models(y_train=None):
             scale_pos_weight = float(neg_count / pos_count)
 
     catboost_model = CatBoostClassifier(
-        iterations=model_params["catboost"]["iterations"],
-        depth=model_params["catboost"]["depth"],
-        learning_rate=model_params["catboost"]["learning_rate"],
+        iterations=model_params["catboost"].get("n_estimators", 500),
+        depth=model_params["catboost"].get("max_depth", 6),
+        learning_rate=model_params["catboost"].get("lr", 0.03),
         auto_class_weights="Balanced",
         verbose=0
     )
 
     xgboost_model = XGBClassifier(
-        n_estimators=model_params["xgboost"]["n_estimators"],
-        max_depth=model_params["xgboost"]["max_depth"],
-        learning_rate=model_params["xgboost"]["learning_rate"],
+        n_estimators=model_params["xgboost"].get("n_estimators", 500),
+        max_depth=model_params["xgboost"].get("max_depth", 6),
+        learning_rate=model_params["xgboost"].get("lr", 0.03),
         scale_pos_weight=scale_pos_weight,
         eval_metric="logloss"
     )
 
     lightgbm_model = LGBMClassifier(
-        n_estimators=model_params["lightgbm"]["n_estimators"],
-        max_depth=model_params["lightgbm"]["max_depth"],
-        learning_rate=model_params["lightgbm"]["learning_rate"],
+        n_estimators=model_params["lightgbm"].get("n_estimators", 500),
+        max_depth=model_params["lightgbm"].get("max_depth", 6),
+        learning_rate=model_params["lightgbm"].get("lr", 0.03),
         class_weight="balanced",
         verbose=-1
     )
