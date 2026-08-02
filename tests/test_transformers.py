@@ -11,7 +11,7 @@ def test_feature_engineer_transform():
         "NumberOfOpenCreditLinesAndLoans": 5,
         "NumberRealEstateLoansOrLines": 1,
         "NumberOfTimes90DaysLate": 1,
-        "NumberDependingPersons": None
+        "NumberOfDependents": None
     }])
     
     transformer = CreditRiskFeatureEngineer()

@@ -11,21 +11,22 @@ class CreditRiskFeatureEngineer(BaseEstimator, TransformerMixin):
     """
     def __init__(self, n_neighbors: int = None):
         params = load_params()
-        # Fallback to params.yaml value if n_neighbors is not explicitly provided
         self.n_neighbors = n_neighbors or params.get("preprocessing", {}).get("knn_imputer_n_neighbors", 5)
         self.knn_imputer = None
-        self.median_income_ = None
+        self.median_income_ = 5000.0  # sensible default fallback
 
     def fit(self, X: pd.DataFrame, y=None):
-        impute_cols = ["MonthlyIncome", "NumberDependingPersons"]
+        impute_cols = ["MonthlyIncome", "NumberOfDependents"]
         available_cols = [col for col in impute_cols if col in X.columns]
         
-        if available_cols:
-            self.knn_imputer = KNNImputer(n_neighbors=self.n_neighbors)
+        if available_cols and len(X) > 1:
+            self.knn_imputer = KNNImputer(n_neighbors=min(self.n_neighbors, len(X)-1))
             self.knn_imputer.fit(X[available_cols])
             
         if "MonthlyIncome" in X.columns:
-            self.median_income_ = X["MonthlyIncome"].median()
+            med = X["MonthlyIncome"].median()
+            if pd.notna(med):
+                self.median_income_ = med
             
         return self
 
@@ -38,16 +39,16 @@ class CreditRiskFeatureEngineer(BaseEstimator, TransformerMixin):
                 X = X.drop(columns=[col])
 
         # 1. Imputation handling via fitted KNN imputer
-        impute_cols = ["MonthlyIncome", "NumberDependingPersons"]
+        impute_cols = ["MonthlyIncome", "NumberOfDependents"]
         available_cols = [col for col in impute_cols if col in X.columns]
-        if self.knn_imputer is not None and available_cols:
+        if self.knn_imputer is not None and available_cols and len(X) > 1:
             X[available_cols] = self.knn_imputer.transform(X[available_cols])
         
         # Fallback fillna for any remaining NaNs
         if "MonthlyIncome" in X.columns:
             X["MonthlyIncome"] = X["MonthlyIncome"].fillna(self.median_income_)
-        if "NumberDependingPersons" in X.columns:
-            X["NumberDependingPersons"] = X["NumberDependingPersons"].fillna(0)
+        if "NumberOfDependents" in X.columns:
+            X["NumberOfDependents"] = X["NumberOfDependents"].fillna(0)
 
         # 2. Derived Feature Engineering (Domain Specific Ratios & Interactions)
         if "MonthlyIncome" in X.columns and "DebtRatio" in X.columns:

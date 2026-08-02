@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from pandera.errors import SchemaError
+from pandera.errors import SchemaError, SchemaErrors
 from src.data.validation import validate_raw_data
 
 def test_validate_raw_data_success():
@@ -14,7 +14,8 @@ def test_validate_raw_data_success():
         "NumberOfOpenCreditLinesAndLoans": 4,
         "NumberRealEstateLoansOrLines": 0,
         "NumberOfTimes90DaysLate": 0,
-        "NumberDependingPersons": 1
+        "NumberOfDependents": 1,
+        "NumberOfTime60-89DaysPastDueNotWorse": 0
     }])
     validated = validate_raw_data(valid_df)
     assert isinstance(validated, pd.DataFrame)
@@ -31,7 +32,8 @@ def test_validate_raw_data_failure():
         "NumberOfOpenCreditLinesAndLoans": 4,
         "NumberRealEstateLoansOrLines": 0,
         "NumberOfTimes90DaysLate": 0,
-        "NumberDependingPersons": 1
+        "NumberOfDependents": 1,
+        "NumberOfTime60-89DaysPastDueNotWorse": 0
     }])
-    with pytest.raises(SchemaError):
+    with pytest.raises((SchemaError, SchemaErrors)):
         validate_raw_data(invalid_df)
