@@ -25,7 +25,6 @@ wheels/
 
 # Jupyter Notebooks
 .ipynb_checkpoints
-*.html
 
 # Data & Models (DVC will track data, local caches ignored)
 data/raw/*
@@ -52,10 +51,6 @@ data/processed/
 *.zip
 
 # Ignore heavy ML artifacts
-mlflow.db
-mlflow/
-*.pkl
-*.joblib
 /data
 
 # Local SQLite telemetry fallback (dev only — never commit)

@@ -29,6 +29,13 @@ app.add_middleware(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+from fastapi.responses import FileResponse
+import os
+
+@app.get("/")
+async def read_root():
+    # Point this to where your App.html is stored in your project structure
+    return FileResponse("src/App.html")
 
 @app.on_event("startup")
 def startup_event():
