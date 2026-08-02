@@ -60,6 +60,3 @@ mlflow/
 *.joblib
 /data
 
-
-
-*.ipynb linguist-detectable=false
