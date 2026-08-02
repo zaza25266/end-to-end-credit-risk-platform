@@ -61,12 +61,7 @@ def train_and_evaluate():
             mlflow.sklearn.log_model(
                 model, 
                 artifact_path=f"{name}_model",
-                skops_trusted_types=[
-                    "catboost.core.CatBoostClassifier",
-                    "xgboost.sklearn.XGBClassifier",
-                    "lightgbm.basic.Booster",
-                    "lightgbm.sklearn.LGBMClassifier"
-                ]
+                serialization_format="cloudpickle"
             )
             
             # If this is our champion ensemble, save it locally as champion_model.pkl for FastAPI
