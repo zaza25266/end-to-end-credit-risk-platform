@@ -381,6 +381,20 @@
         .notice-error strong { font-weight: 600; }
         .notice-error.visible { display: block; }
 
+        /* ── Info notice ────────────────────────────────────────────── */
+        .notice-info {
+            display: none;
+            margin-top: 1.25rem;
+            padding: .8rem 1rem;
+            background: #fdfaf2;
+            border: 1px solid #ede9e1;
+            border-left: 3px solid var(--gold);
+            font-size: .82rem;
+            color: var(--ink);
+        }
+        .notice-info strong { font-weight: 600; color: var(--gold); }
+        .notice-info.visible { display: block; }
+
         /* ── Decision panel ──────────────────────────────────────────── */
         .decision-panel {
             display: none;
@@ -686,6 +700,11 @@
             <strong>Error &mdash;</strong> <span id="errorText"></span>
         </div>
 
+        <!-- Info notice -->
+        <div class="notice-info" id="infoCard" role="status">
+            <strong>Note &mdash;</strong> First-time requests may take 30-60 minutes to process as the free Render tier wakes up the model. Subsequent assessments will work instantly.
+        </div>
+
         <!-- Decision panel -->
         <div class="decision-panel" id="resultCard" role="region" aria-label="Assessment result" aria-live="polite">
 
@@ -748,6 +767,7 @@
             const btn        = document.getElementById('submitBtn');
             const errorCard  = document.getElementById('errorCard');
             const errorText  = document.getElementById('errorText');
+            const infoCard   = document.getElementById('infoCard');
             const resultCard = document.getElementById('resultCard');
 
             // Loading state
@@ -756,6 +776,7 @@
             btn.querySelector('.btn-label').textContent = 'Evaluating…';
             errorCard.classList.remove('visible');
             resultCard.classList.remove('visible');
+            infoCard.classList.add('visible');
 
             // Build API payload.
             // HTML input ids use underscores (valid DOM); the two past-due fields must be
@@ -842,6 +863,7 @@
                 btn.disabled = false;
                 btn.classList.remove('loading');
                 btn.querySelector('.btn-label').textContent = 'Submit for Assessment';
+                infoCard.classList.remove('visible');
             }
         });
     </script>
